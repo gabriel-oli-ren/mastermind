@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Colorlock.online — Realtime Color Duel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e16;
+    --bg-elev:#121828;
+    --bg-elev2:#1a2236;
+    --border:#26304a;
+    --text:#eef1f8;
+    --text-dim:#8d96ad;
+    --accent:#7c5cff;
+    --accent-dim:#5b3fd6;
+    --teal:#34e2c0;
+    --danger:#ff5d6c;
+    --warn:#f2b84b;
+
+    --c-red:#ff4d5e;
+    --c-blue:#3da9fc;
+    --c-green:#36d399;
+    --c-yellow:#ffd166;
+    --c-purple:#b388ff;
+    --c-orange:#ff9f4d;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(124,92,255,0.16), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(52,226,192,0.10), transparent 45%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 16px 60px;
+  }
+  h1,h2,h3{font-family:'Space Grotesk', system-ui, sans-serif; margin:0;}
+  .mono{font-family:'JetBrains Mono', monospace;}
+  .wrap{width:100%; max-width:520px;}
+
+  .top{
+    display:flex; align-items:center; gap:10px; margin-bottom:28px; justify-content:center;
+  }
+  .top .dot{width:10px;height:10px;border-radius:50%; background:var(--accent); box-shadow:0 0 14px var(--accent);}
+  .top h1{font-size:22px; letter-spacing:0.5px;}
+  .top span{color:var(--text-dim); font-size:13px; margin-left:4px;}
+
+  .card{
+    background:linear-gradient(180deg, var(--bg-elev), var(--bg-elev2));
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:16px;
+    box-shadow:0 12px 30px -16px rgba(0,0,0,0.6);
+  }
+
+  .btn{
+    appearance:none; border:1px solid var(--border); background:var(--bg-elev2);
+    color:var(--text); font-family:'Inter',sans-serif; font-weight:600; font-size:14px;
+    padding:13px 18px; border-radius:12px; cursor:pointer; transition:transform .12s, border-color .12s, background .12s;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn:hover{border-color:var(--accent); transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+  .btn:disabled{opacity:.45; cursor:not-allowed; transform:none;}
+  .btn-primary{background:linear-gradient(135deg, var(--accent), #5b3fd6); border-color:transparent;}
+  .btn-primary:hover{border-color:transparent; filter:brightness(1.08);}
+  .btn-teal{background:linear-gradient(135deg, var(--teal), #1bb89a); border-color:transparent; color:#04211b;}
+  .btn-danger{background:transparent; border-color:var(--danger); color:var(--danger);}
+  .btn-danger:hover{background:rgba(255,93,108,0.1); border-color:var(--danger);}
+  .btn-ghost{background:transparent;}
+  .btn-block{width:100%;}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap;}
+
+  .mode-btn{
+    width:100%; text-align:left; padding:16px 18px; margin-bottom:10px;
+    display:flex; flex-direction:column; gap:3px; align-items:flex-start;
+  }
+  .mode-btn .t{font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700;}
+  .mode-btn .d{font-size:12.5px; color:var(--text-dim); font-weight:400;}
+
+  input[type=text]{
+    width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text);
+    padding:13px 14px; border-radius:12px; font-family:'JetBrains Mono', monospace;
+    font-size:18px; letter-spacing:3px; text-align:center; text-transform:uppercase;
+  }
+  input[type=text]:focus{outline:none; border-color:var(--accent);}
+
+  .msg{
+    font-size:13px; padding:10px 14px; border-radius:10px; margin-bottom:14px;
+    border:1px solid var(--border);
+  }
+  .msg.error{background:rgba(255,93,108,0.08); border-color:rgba(255,93,108,0.4); color:#ffb3ba;}
+  .msg.info{background:rgba(124,92,255,0.08); border-color:rgba(124,92,255,0.4); color:#cfc4ff;}
+
+  /* room header */
+  .room-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+  .code-chip{
+    display:flex; align-items:center; gap:10px; background:var(--bg-elev); border:1px dashed var(--border);
+    border-radius:12px; padding:8px 14px;
+  }
+  .code-chip .lbl{font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;}
+  .code-chip .code{font-family:'JetBrains Mono',monospace; font-weight:700; font-size:18px; letter-spacing:3px;}
+  .icon-btn{
+    background:transparent; border:1px solid var(--border); color:var(--text-dim);
+    width:34px; height:34px; border-radius:9px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{color:var(--text); border-color:var(--accent);}
+
+  .badge{
+    display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600;
+    padding:7px 13px; border-radius:999px; border:1px solid var(--border); background:var(--bg-elev);
+  }
+  .badge .pulse{width:7px; height:7px; border-radius:50%; background:var(--teal); box-shadow:0 0 10px var(--teal);}
+  .badge.wait .pulse{background:var(--warn); box-shadow:0 0 10px var(--warn); animation:pulse 1.4s infinite;}
+  .badge.mine .pulse{animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  .center-msg{text-align:center; padding:34px 10px; color:var(--text-dim); font-size:14px;}
+  .center-msg .big{font-family:'Space Grotesk',sans-serif; color:var(--text); font-size:17px; margin-bottom:6px; font-weight:700;}
+
+  .spinner{
+    width:30px; height:30px; border-radius:50%; margin:0 auto 16px;
+    border:3px solid var(--border); border-top-color:var(--accent);
+    animation:spin 0.9s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .ticket{
+    text-align:center; padding:22px 10px; position:relative;
+  }
+  .ticket .code-big{
+    font-family:'JetBrains Mono',monospace; font-size:38px; font-weight:700; letter-spacing:10px;
+    background:linear-gradient(135deg,var(--text),var(--text-dim)); -webkit-background-clip:text; background-clip:text;
+    color:transparent; margin:14px 0;
+  }
+
+  /* color builder */
+  .swatches{display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin:14px 0;}
+  .swatch{
+    aspect-ratio:1; border-radius:12px; border:2px solid transparent; cursor:pointer;
+    transition:transform .1s, border-color .1s; position:relative;
+  }
+  .swatch:hover{transform:translateY(-2px);}
+  .swatch:disabled{opacity:.35; cursor:not-allowed; transform:none;}
+  .swatch[data-color=red]{background:var(--c-red); box-shadow:0 4px 14px -4px var(--c-red);}
+  .swatch[data-color=blue]{background:var(--c-blue); box-shadow:0 4px 14px -4px var(--c-blue);}
+  .swatch[data-color=green]{background:var(--c-green); box-shadow:0 4px 14px -4px var(--c-green);}
+  .swatch[data-color=yellow]{background:var(--c-yellow); box-shadow:0 4px 14px -4px var(--c-yellow);}
+  .swatch[data-color=purple]{background:var(--c-purple); box-shadow:0 4px 14px -4px var(--c-purple);}
+  .swatch[data-color=orange]{background:var(--c-orange); box-shadow:0 4px 14px -4px var(--c-orange);}
+
+  .slots{display:flex; gap:10px; justify-content:center; margin:18px 0;}
+  .slot{
+    width:54px; height:54px; border-radius:14px; border:2px dashed var(--border);
+    background:var(--bg); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .slot.filled{border-style:solid;}
+  .slot[data-fill=red]{background:var(--c-red); border-color:var(--c-red);}
+  .slot[data-fill=blue]{background:var(--c-blue); border-color:var(--c-blue);}
+  .slot[data-fill=green]{background:var(--c-green); border-color:var(--c-green);}
+  .slot[data-fill=yellow]{background:var(--c-yellow); border-color:var(--c-yellow);}
+  .slot[data-fill=purple]{background:var(--c-purple); border-color:var(--c-purple);}
+  .slot[data-fill=orange]{background:var(--c-orange); border-color:var(--c-orange);}
+
+  /* history */
+  .history{margin-top:18px;}
+  .history h3{font-size:13px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; font-weight:600;}
+  .guess-row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:12px;
+    padding:10px 12px; margin-bottom:8px; animation:popin .2s ease;
+  }
+  @keyframes popin{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+  .guess-row .pegs{display:flex; gap:6px;}
+  .peg{width:22px; height:22px; border-radius:7px;}
+  .peg[data-c=red]{background:var(--c-red);}
+  .peg[data-c=blue]{background:var(--c-blue);}
+  .peg[data-c=green]{background:var(--c-green);}
+  .peg[data-c=yellow]{background:var(--c-yellow);}
+  .peg[data-c=purple]{background:var(--c-purple);}
+  .peg[data-c=orange]{background:var(--c-orange);}
+  .fb{display:flex; gap:10px; align-items:center; font-size:12px; color:var(--text-dim); white-space:nowrap;}
+  .fb-pegs{display:flex; gap:3px;}
+  .fb-dot{width:8px; height:8px; border-radius:50%; background:#3a4360;}
+  .fb-dot.black{background:#fff;}
+  .fb-dot.white{background:#9aa3bd;}
+  .fb-wait{font-size:11.5px; color:var(--warn);}
+
+  .reveal-row{display:flex; gap:8px; justify-content:center; margin:14px 0;}
+  .reveal-row .peg{width:34px; height:34px; border-radius:10px;}
+
+  .result-banner{text-align:center; padding:8px 0 4px;}
+  .result-banner .emoji{font-size:40px; margin-bottom:6px;}
+  .result-banner .line{font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700;}
+
+  .attempts{font-size:12.5px; color:var(--text-dim); text-align:center; margin-top:8px;}
+  .footer-actions{display:flex; gap:10px; margin-top:18px;}
+  .footer-actions .btn{flex:1;}
+
+  @media (max-width:420px){
+    .ticket .code-big{font-size:28px; letter-spacing:6px;}
+    .slot{width:46px; height:46px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top">
+    <div class="dot"></div>
+    <h1>Colorlock.online<span>realtime color duel</span></h1>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script type="module">
+/* =====================================================================================
+   SUPABASE SETUP — run this once in the Supabase SQL editor for your project,
+   then enable Realtime for both tables (Database → Replication, or the
+   ALTER PUBLICATION line below does it too).
+
+   create table rooms (
+     id uuid primary key default gen_random_uuid(),
+     code text unique not null,
+     player1 text,
+     player2 text,
+     status text not null default 'waiting',       -- waiting | setting_pattern | playing | finished
+     secret_pattern text[],
+     current_turn text,
+     winner text,
+     max_guesses int not null default 10,
+     created_at timestamptz not null default now()
+   );
+
+   create table moves (
+     id uuid primary key default gen_random_uuid(),
+     room_code text not null references rooms(code) on delete cascade,
+     player text not null,
+     guess text[] not null,
+     correct_position int,
+     correct_color_wrong_position int,
+     created_at timestamptz not null default now()
+   );
+
+   alter publication supabase_realtime add table rooms, moves;
+
+   -- No auth in this app (anon key only), so policies are intentionally permissive.
+   -- Lock these down further if you add real user accounts.
+   alter table rooms enable row level security;
+   create policy "rooms_anon_all" on rooms for all using (true) with check (true);
+   alter table moves enable row level security;
+   create policy "moves_anon_all" on moves for all using (true) with check (true);
+
+   SECURITY NOTE on secret_pattern:
+   With only an anon key and no real auth, Postgres can't tell "player1's browser"
+   apart from "player2's browser" at the row/column level, so a Realtime UPDATE on
+   `rooms` technically delivers the full row — including secret_pattern — to both
+   clients. This app never reads or renders that field on the guesser's side (and
+   feedback is computed by the creator's own client from the pattern it holds in
+   memory/localStorage, not by re-reading the column), but a player who opens dev
+   tools could still see it on the wire. For airtight hiding you'd need real auth
+   plus a server-side function (e.g. a Postgres RPC or Edge Function) to grade
+   guesses instead of doing it in the browser.
+===================================================================================== */
+
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabaseUrl = "https://emjbgvznwahlpxjfugft.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVtamJndnpud2FobHB4amZ1Z2Z0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjg0NDYsImV4cCI6MjA5NzgwNDQ0Nn0.cZxACCvsd5xseBmEU3v4qHDtx_0J0IBWtfzD6Vtxl4E";
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const COLORS = ["red","blue","green","yellow","purple","orange"];
+const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I/L, easy to read aloud
+
+/* ---------------- identity & session persistence ---------------- */
+function getOrCreateId(){
+  let id = localStorage.getItem("cc_player_id");
+  if(!id){ id = crypto.randomUUID(); localStorage.setItem("cc_player_id", id); }
+  return id;
+}
+function saveSession(code){ localStorage.setItem("cc_session", JSON.stringify({ code })); }
+function clearSession(){ localStorage.removeItem("cc_session"); }
+
+/* ---------------- app state ---------------- */
+const state = {
+  myId: getOrCreateId(),
+  screen: "lobby",        // lobby | room
+  lobbyMode: "menu",      // menu | join
+  room: null,
+  moves: [],
+  mySecret: null,         // creator's pattern, kept client-side only
+  currentBuild: [],       // colors being picked (pattern or guess)
+  joinInput: "",
+  busy: false,
+  message: null,          // { type, text }
+  channels: [],
+};
+
+const app = document.getElementById("app");
+
+function isCreator(){ return !!state.room && state.myId === state.room.player1; }
+function isGuesser(){ return !!state.room && state.myId === state.room.player2; }
+function opponentId(){
+  if(!state.room) return null;
+  return isCreator() ? state.room.player2 : state.room.player1;
+}
+
+/* ---------------- mastermind grading ---------------- */
+function gradeGuess(secret, guess){
+  let correctPos = 0;
+  const secretLeft = [], guessLeft = [];
+  for(let i=0;i<4;i++){
+    if(secret[i] === guess[i]) correctPos++;
+    else { secretLeft.push(secret[i]); guessLeft.push(guess[i]); }
+  }
+  let colorMatch = 0;
+  const counts = {};
+  for(const c of secretLeft) counts[c] = (counts[c]||0) + 1;
+  for(const c of guessLeft){
+    if(counts[c] > 0){ colorMatch++; counts[c]--; }
+  }
+  return { pos: correctPos, color: colorMatch };
+}
+
+/* ---------------- helpers ---------------- */
+function genCode(){
+  let s = "";
+  for(let i=0;i<6;i++) s += CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)];
+  return s;
+}
+function setMessage(type, text){ state.message = { type, text }; render(); }
+function clearMessage(){ state.message = null; }
+
+async function unsubscribeAll(){
+  for(const ch of state.channels){ try{ await supabase.removeChannel(ch); }catch(e){} }
+  state.channels = [];
+}
+
+/* ---------------- data loading ---------------- */
+async function loadMoves(code){
+  const { data, error } = await supabase
+    .from("moves").select("*").eq("room_code", code).order("created_at", { ascending: true });
+  state.moves = error ? [] : (data || []);
+}
+
+function upsertMove(row){
+  const idx = state.moves.findIndex(m => m.id === row.id);
+  if(idx === -1) state.moves.push(row);
+  else state.moves[idx] = row;
+  state.moves.sort((a,b)=> new Date(a.created_at) - new Date(b.created_at));
+}
+
+/* ---------------- realtime ---------------- */
+async function subscribeToRoom(code){
+  await unsubscribeAll();
+
+  const roomCh = supabase.channel(`room-${code}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `code=eq.${code}` },
+      (payload) => {
+        if(payload.eventType === "DELETE"){
+          setMessage("error", "The room was closed.");
+          backToLobby(false);
+          return;
+        }
+        state.room = payload.new;
+        render();
+      })
+    .subscribe();
+
+  const movesCh = supabase.channel(`moves-${code}`)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "moves", filter: `room_code=eq.${code}` },
+      async (payload) => {
+        upsertMove(payload.new);
+        render();
+        if(isCreator() && payload.new.correct_position === null){
+          await gradeAndRecord(payload.new);
+        }
+      })
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "moves", filter: `room_code=eq.${code}` },
+      (payload) => { upsertMove(payload.new); render(); })
+    .subscribe();
+
+  state.channels = [roomCh, movesCh];
+}
+
+/* creator grades the most recent pending guess from memory/localStorage */
+async function gradeAndRecord(moveRow){
+  const secret = state.mySecret || JSON.parse(localStorage.getItem(`cc_secret_${state.room.code}`) || "null");
+  if(!secret){ console.warn("Colorlock.online: secret pattern unavailable to grade this guess."); return; }
+
+  const fb = gradeGuess(secret, moveRow.guess);
+
+  const { data: updated } = await supabase
+    .from("moves")
+    .update({ correct_position: fb.pos, correct_color_wrong_position: fb.color })
+    .eq("id", moveRow.id).is("correct_position", null)
+    .select();
+  if(!updated || updated.length === 0) return; // already graded elsewhere
+
+  const guesserId = state.room.player2;
+  const attemptsUsed = state.moves.filter(m => m.player === guesserId).length;
+  const maxGuesses = state.room.max_guesses || 10;
+
+  if(fb.pos === 4){
+    await supabase.from("rooms").update({ status: "finished", winner: guesserId })
+      .eq("code", state.room.code).eq("status", "playing");
+  } else if(attemptsUsed >= maxGuesses){
+    await supabase.from("rooms").update({ status: "finished", winner: state.myId })
+      .eq("code", state.room.code).eq("status", "playing");
+  }
+}
+
+/* ---------------- matchmaking ---------------- */
+async function quickMatch(){
+  state.busy = true; clearMessage(); render();
+  try{
+    const { data: candidates } = await supabase
+      .from("rooms").select("*")
+      .eq("status", "waiting").is("player2", null)
+      .order("created_at", { ascending: true }).limit(5);
+
+    for(const cand of (candidates || [])){
+      if(cand.player1 === state.myId) continue;
+      const { data: claimed } = await supabase
+        .from("rooms")
+        .update({ player2: state.myId, status: "setting_pattern", current_turn: cand.player1 })
+        .eq("code", cand.code).is("player2", null)
+        .select();
+      if(claimed && claimed.length > 0){
+        await enterRoom(claimed[0]);
+        return;
+      }
+    }
+    // nobody waiting (or lost the race on all candidates) — create a fresh room
+    const code = genCode();
+    const { data: created, error } = await supabase
+      .from("rooms")
+      .insert({ code, player1: state.myId, status: "waiting", max_guesses: 10 })
+      .select().single();
+    if(error) throw error;
+    await enterRoom(created);
+  }catch(e){
+    setMessage("error", "Could not start quick match. Try again.");
+  }finally{
+    state.busy = false; render();
+  }
+}
+
+async function createPrivateRoom(){
+  state.busy = true; clearMessage(); render();
+  try{
+    let created = null;
+    for(let i=0;i<5 && !created;i++){
+      const code = genCode();
+      const { data, error } = await supabase
+        .from("rooms").insert({ code, player1: state.myId, status: "waiting", max_guesses: 10 })
+        .select().single();
+      if(!error) created = data;
+      else if(error.code !== "23505") throw error; // not a unique-violation, bail
+    }
+    if(!created) throw new Error("code collision");
+    await enterRoom(created);
+  }catch(e){
+    setMessage("error", "Could not create the room. Try again.");
+  }finally{
+    state.busy = false; render();
+  }
+}
+
+async function joinPrivateRoom(rawCode){
+  const code = (rawCode || "").trim().toUpperCase();
+  if(code.length !== 6){ setMessage("error", "Enter the 6-character code."); return; }
+
+  state.busy = true; clearMessage(); render();
+  try{
+    const { data: found, error } = await supabase.from("rooms").select("*").eq("code", code).maybeSingle();
+    if(error || !found){ setMessage("error", "No room found with that code."); return; }
+    if(found.player1 === state.myId){ setMessage("error", "That's your own room — share the code with a friend instead."); return; }
+    if(found.player2){ setMessage("error", "That room is already full."); return; }
+    if(found.status !== "waiting"){ setMessage("error", "That game has already started."); return; }
+
+    const { data: claimed } = await supabase
+      .from("rooms")
+      .update({ player2: state.myId, status: "setting_pattern", current_turn: found.player1 })
+      .eq("code", code).is("player2", null)
+      .select();
+    if(!claimed || claimed.length === 0){ setMessage("error", "Someone just joined that room first."); return; }
+
+    await enterRoom(claimed[0]);
+  }catch(e){
+    setMessage("error", "Could not join the room. Try again.");
+  }finally{
+    state.busy = false; render();
+  }
+}
+
+async function enterRoom(room){
+  state.room = room;
+  state.moves = [];
+  state.currentBuild = [];
+  state.mySecret = null;
+  saveSession(room.code);
+  await loadMoves(room.code);
+  await subscribeToRoom(room.code);
+  state.screen = "room";
+  clearMessage();
+  render();
+}
+
+/* ---------------- gameplay actions ---------------- */
+async function confirmPattern(){
+  if(state.currentBuild.length !== 4) return;
+  const pattern = [...state.currentBuild];
+  state.mySecret = pattern;
+  localStorage.setItem(`cc_secret_${state.room.code}`, JSON.stringify(pattern));
+
+  await supabase.from("rooms")
+    .update({ secret_pattern: pattern, status: "playing", current_turn: state.room.player2 })
+    .eq("code", state.room.code).eq("status", "setting_pattern");
+
+  state.currentBuild = [];
+  render();
+}
+
+async function submitGuess(){
+  if(state.currentBuild.length !== 4) return;
+  const guess = [...state.currentBuild];
+  state.currentBuild = [];
+  render();
+  await supabase.from("moves").insert({
+    room_code: state.room.code, player: state.myId, guess,
+    correct_position: null, correct_color_wrong_position: null,
+  });
+}
+
+async function leaveRoom(){
+  const room = state.room;
+  try{
+    if(room){
+      if(room.status === "waiting" && state.myId === room.player1){
+        await supabase.from("rooms").delete().eq("code", room.code);
+      } else if(room.status !== "finished"){
+        const opp = opponentId();
+        if(opp){
+          await supabase.from("rooms").update({ status: "finished", winner: opp })
+            .eq("code", room.code).neq("status", "finished");
+        }
+      }
+    }
+  }catch(e){ /* best-effort cleanup */ }
+  await unsubscribeAll();
+  backToLobby(true);
+}
+
+function backToLobby(clearedAlready){
+  if(!clearedAlready) unsubscribeAll();
+  clearSession();
+  state.room = null;
+  state.moves = [];
+  state.mySecret = null;
+  state.currentBuild = [];
+  state.screen = "lobby";
+  state.lobbyMode = "menu";
+  clearMessage();
+  render();
+}
+
+/* ---------------- color-builder interactions ---------------- */
+function pickColor(color){
+  if(state.currentBuild.length >= 4) return;
+  state.currentBuild.push(color);
+  render();
+}
+function removeSlot(i){
+  if(i >= state.currentBuild.length) return;
+  state.currentBuild.splice(i,1);
+  render();
+}
+function clearBuild(){ state.currentBuild = []; render(); }
+
+/* ---------------- clipboard ---------------- */
+async function copyCode(){
+  if(!state.room) return;
+  try{ await navigator.clipboard.writeText(state.room.code); setMessage("info","Code copied."); }
+  catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = state.room.code; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); setMessage("info","Code copied."); }catch(e2){}
+    ta.remove();
+  }
+  setTimeout(()=>{ if(state.message && state.message.text === "Code copied.") clearMessage(); render(); }, 1600);
+  render();
+}
+
+/* ===================================================================
+   RENDERING
+=================================================================== */
+function el(html){ const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+
+function swatchesHtml(disabled){
+  return `<div class="swatches">${COLORS.map(c=>`<button class="swatch" data-color="${c}" data-action="pick" ${disabled?"disabled":""}></button>`).join("")}</div>`;
+}
+function slotsHtml(build, removable){
+  let cells = "";
+  for(let i=0;i<4;i++){
+    const c = build[i];
+    cells += `<div class="slot ${c?"filled":""}" ${c?`data-fill="${c}"`:""} ${removable && c ? `data-action="remove-slot" data-idx="${i}"`:""}></div>`;
+  }
+  return `<div class="slots">${cells}</div>`;
+}
+function pegsHtml(colors){
+  return `<div class="pegs">${colors.map(c=>`<div class="peg" data-c="${c}"></div>`).join("")}</div>`;
+}
+function feedbackDotsHtml(pos, color){
+  let dots = "";
+  for(let i=0;i<pos;i++) dots += `<div class="fb-dot black"></div>`;
+  for(let i=0;i<color;i++) dots += `<div class="fb-dot white"></div>`;
+  for(let i=0;i<4-pos-color;i++) dots += `<div class="fb-dot"></div>`;
+  return `<div class="fb-pegs">${dots}</div>`;
+}
+function historyHtml(){
+  if(state.moves.length === 0){
+    return `<div class="history"><h3>Guesses</h3><p style="color:var(--text-dim); font-size:13px;">No guesses yet.</p></div>`;
+  }
+  const rows = state.moves.slice().reverse().map(m=>{
+    const pending = m.correct_position === null;
+    return `<div class="guess-row">
+      ${pegsHtml(m.guess)}
+      ${pending
+        ? `<div class="fb-wait">grading…</div>`
+        : `<div class="fb">${feedbackDotsHtml(m.correct_position, m.correct_color_wrong_position)}<span>${m.correct_position}/4 exact</span></div>`}
+    </div>`;
+  }).join("");
+  return `<div class="history"><h3>Guesses</h3>${rows}</div>`;
+}
+
+function render(){
+  app.innerHTML = "";
+  if(state.message) app.appendChild(el(`<div class="msg ${state.message.type}">${state.message.text}</div>`));
+  app.appendChild(state.screen === "lobby" ? renderLobby() : renderRoom());
+  bindEvents();
+}
+
+function renderLobby(){
+  if(state.lobbyMode === "join"){
+    return el(`
+      <div class="card">
+        <h3 style="margin-bottom:14px;">Join private room</h3>
+        <input type="text" id="joinCodeInput" maxlength="6" placeholder="ABC123" value="${state.joinInput}" />
+        <div class="btn-row" style="margin-top:14px;">
+          <button class="btn btn-ghost" data-action="back-to-menu">Back</button>
+          <button class="btn btn-primary" data-action="do-join" ${state.busy?"disabled":""}>${state.busy?"Joining…":"Join room"}</button>
+        </div>
+      </div>
+    `);
+  }
+  return el(`
+    <div class="card">
+      <button class="btn mode-btn" data-action="quick-match" ${state.busy?"disabled":""}>
+        <span class="t">⚡ Quick match</span>
+        <span class="d">Get paired with a random opponent</span>
+      </button>
+      <button class="btn mode-btn" data-action="create-room" ${state.busy?"disabled":""}>
+        <span class="t">🔒 Create private room</span>
+        <span class="d">Get a code to share with a friend</span>
+      </button>
+      <button class="btn mode-btn" data-action="open-join" ${state.busy?"disabled":""}>
+        <span class="t">🔑 Join private room</span>
+        <span class="d">Enter a friend's code</span>
+      </button>
+    </div>
+  `);
+}
+
+function renderRoom(){
+  const room = state.room;
+  const container = el(`<div></div>`);
+
+  const turnBadge = (()=>{
+    if(room.status === "waiting") return `<div class="badge wait"><span class="pulse"></span>Waiting for opponent</div>`;
+    if(room.status === "setting_pattern"){
+      return isCreator()
+        ? `<div class="badge mine"><span class="pulse"></span>Set your pattern</div>`
+        : `<div class="badge wait"><span class="pulse"></span>Opponent's turn</div>`;
+    }
+    if(room.status === "playing"){
+      if(isGuesser()){
+        const pending = state.moves.some(m=>m.player===state.myId && m.correct_position===null);
+        return pending
+          ? `<div class="badge wait"><span class="pulse"></span>Awaiting result</div>`
+          : `<div class="badge mine"><span class="pulse"></span>Your turn</div>`;
+      }
+      return `<div class="badge wait"><span class="pulse"></span>Opponent's turn</div>`;
+    }
+    if(room.status === "finished") return `<div class="badge"><span class="pulse" style="background:var(--text-dim); box-shadow:none;"></span>Game over</div>`;
+    return "";
+  })();
+
+  container.appendChild(el(`
+    <div class="room-head">
+      <div class="code-chip">
+        <div><div class="lbl">Room code</div><div class="code">${room.code}</div></div>
+        <button class="icon-btn" data-action="copy-code" title="Copy code">⧉</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        ${turnBadge}
+      </div>
+    </div>
+  `));
+
+  let body;
+  if(room.status === "waiting"){
+    body = el(`
+      <div class="card">
+        <div class="ticket">
+          <div class="spinner"></div>
+          <div class="center-msg"><div class="big">Waiting for an opponent…</div>Share this code with a friend, or sit tight for a quick match.</div>
+          <div class="code-big">${room.code}</div>
+          <button class="btn btn-primary" data-action="copy-code">Copy invite code</button>
+        </div>
+      </div>
+    `);
+  }
+  else if(room.status === "setting_pattern"){
+    if(isCreator()){
+      body = el(`
+        <div class="card">
+          <h3>Set your secret pattern</h3>
+          <p style="color:var(--text-dim); font-size:13px; margin:6px 0 0;">Pick 4 colors. Your opponent will try to guess this exact sequence.</p>
+          ${slotsHtml(state.currentBuild, true)}
+          ${swatchesHtml(state.currentBuild.length>=4)}
+          <div class="btn-row">
+            <button class="btn btn-ghost" data-action="clear-build" ${state.currentBuild.length===0?"disabled":""}>Clear</button>
+            <button class="btn btn-primary btn-block" data-action="confirm-pattern" ${state.currentBuild.length!==4?"disabled":""}>Confirm pattern</button>
+          </div>
+        </div>
+      `);
+    } else {
+      body = el(`
+        <div class="card">
+          <div class="center-msg">
+            <div class="spinner"></div>
+            <div class="big">Opponent is setting up the secret pattern</div>
+            Hang tight — you'll start guessing as soon as they're ready.
+          </div>
+        </div>
+      `);
+    }
+  }
+  else if(room.status === "playing"){
+    const maxGuesses = room.max_guesses || 10;
+    const used = state.moves.filter(m=>m.player===room.player2).length;
+    const remaining = Math.max(0, maxGuesses - used);
+    const pending = state.moves.some(m=>m.player===state.myId && m.correct_position===null);
+
+    if(isGuesser()){
+      const canSubmit = state.currentBuild.length===4 && !pending && remaining>0;
+      body = el(`
+        <div class="card">
+          <h3>Make your guess</h3>
+          ${slotsHtml(state.currentBuild, true)}
+          ${swatchesHtml(state.currentBuild.length>=4 || pending)}
+          <div class="btn-row">
+            <button class="btn btn-ghost" data-action="clear-build" ${state.currentBuild.length===0?"disabled":""}>Clear</button>
+            <button class="btn btn-primary btn-block" data-action="submit-guess" ${canSubmit?"":"disabled"}>${pending?"Awaiting result…":"Submit guess"}</button>
+          </div>
+          <div class="attempts">${remaining} guess${remaining===1?"":"es"} remaining</div>
+        </div>
+      `);
+    } else {
+      body = el(`
+        <div class="card">
+          <div class="center-msg">
+            <div class="big">Your opponent is guessing</div>
+            Sit back — feedback is generated automatically as they play.
+          </div>
+          <div class="attempts">${remaining} guess${remaining===1?"":"es"} remaining for them</div>
+        </div>
+      `);
+    }
+  }
+  else if(room.status === "finished"){
+    const won = room.winner === state.myId;
+    const draw = !room.winner;
+    body = el(`
+      <div class="card">
+        <div class="result-banner">
+          <div class="emoji">${draw ? "🤝" : won ? "🏆" : "💀"}</div>
+          <div class="line">${draw ? "Game over" : won ? "You won!" : "You lost"}</div>
+        </div>
+        ${room.secret_pattern ? `
+          <p style="text-align:center; color:var(--text-dim); font-size:12.5px; margin-top:14px;">The secret pattern was</p>
+          <div class="reveal-row">${room.secret_pattern.map(c=>`<div class="peg" data-c="${c}"></div>`).join("")}</div>
+        ` : ""}
+        <div class="footer-actions">
+          <button class="btn btn-ghost" data-action="leave-room">Leave room</button>
+          <button class="btn btn-teal" data-action="new-game">New game</button>
+        </div>
+      </div>
+    `);
+  }
+
+  container.appendChild(body);
+  if(room.status === "playing" || room.status === "finished"){
+    container.appendChild(el(`<div class="card">${historyHtml()}</div>`));
+  }
+  if(room.status !== "finished"){
+    container.appendChild(el(`
+      <div class="footer-actions"><button class="btn btn-danger btn-block" data-action="leave-room">Leave room</button></div>
+    `));
+  }
+  return container;
+}
+
+/* ---------------- event delegation ---------------- */
+function bindEvents(){
+  app.querySelectorAll("[data-action]").forEach(node=>{
+    const action = node.getAttribute("data-action");
+    if(action === "pick"){
+      node.addEventListener("click", ()=> pickColor(node.getAttribute("data-color")));
+    } else if(action === "remove-slot"){
+      node.addEventListener("click", ()=> removeSlot(parseInt(node.getAttribute("data-idx"),10)));
+    } else {
+      node.addEventListener("click", async ()=>{
+        switch(action){
+          case "quick-match": await quickMatch(); break;
+          case "create-room": await createPrivateRoom(); break;
+          case "open-join": state.lobbyMode = "join"; clearMessage(); render(); break;
+          case "back-to-menu": state.lobbyMode = "menu"; clearMessage(); render(); break;
+          case "do-join": {
+            const input = document.getElementById("joinCodeInput");
+            state.joinInput = input ? input.value : state.joinInput;
+            await joinPrivateRoom(state.joinInput);
+            break;
+          }
+          case "copy-code": await copyCode(); break;
+          case "clear-build": clearBuild(); break;
+          case "confirm-pattern": await confirmPattern(); break;
+          case "submit-guess": await submitGuess(); break;
+          case "leave-room": await leaveRoom(); break;
+          case "new-game": await leaveRoom(); break;
+        }
+      });
+    }
+  });
+  const joinInput = document.getElementById("joinCodeInput");
+  if(joinInput){
+    joinInput.addEventListener("input", ()=>{ state.joinInput = joinInput.value.toUpperCase(); });
+    joinInput.addEventListener("keydown", (e)=>{ if(e.key==="Enter") app.querySelector('[data-action="do-join"]').click(); });
+  }
+}
+
+/* ---------------- init / resume session ---------------- */
+async function init(){
+  try{
+    const saved = JSON.parse(localStorage.getItem("cc_session") || "null");
+    if(saved && saved.code){
+      const { data } = await supabase.from("rooms").select("*").eq("code", saved.code).maybeSingle();
+      if(data && (data.player1 === state.myId || data.player2 === state.myId)){
+        state.room = data;
+        if(state.myId === data.player1){
+          state.mySecret = JSON.parse(localStorage.getItem(`cc_secret_${data.code}`) || "null");
+        }
+        await loadMoves(data.code);
+        await subscribeToRoom(data.code);
+        state.screen = "room";
+      } else {
+        clearSession();
+      }
+    }
+  }catch(e){ clearSession(); }
+  render();
+}
+init();
+</script>
+</body>
+</html>
